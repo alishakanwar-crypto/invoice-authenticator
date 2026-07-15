@@ -37,6 +37,18 @@ Production deployments should additionally use encrypted object storage, malware
 PostgreSQL, shared Redis rate limiting, regular backups and independently validated GST/IRP/vendor
 integrations.
 
+## Container deployment
+
+The included container installs Tesseract for scanned JPG/PNG invoices and stores the SQLite
+database and uploaded files below `/data`. Mount `/data` as a persistent volume and configure:
+
+- `APP_SECRET`
+- `ADMIN_PASSWORD`
+- `ADMIN_USERNAME` (defaults to `admin`)
+- `PUBLIC_BASE_URL`
+
+SMTP remains optional; without it, authorized reviewers can still preview the HTML report.
+
 ## Current evidence levels
 
 The first release performs local, explainable tests. A result can be:
