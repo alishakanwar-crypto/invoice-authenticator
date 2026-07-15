@@ -1,5 +1,7 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta
 
+from app.config import IST
+from app.database import ist_now
 from app.email_service import feedback_token, verify_feedback_token
 from app.forensics import _calculate_verdict, _gstin_checksum_valid, _hamming_distance
 
@@ -52,9 +54,15 @@ def test_changed_fields_in_near_duplicate_is_strong_tamper_signal() -> None:
 
 
 def test_feedback_token_expires() -> None:
-    now = int(datetime.now(timezone.utc).timestamp())
+    now = int(datetime.now(IST).timestamp())
     active_token = feedback_token(1, 2, "correct", now + 60)
     expired_token = feedback_token(1, 2, "correct", now - 60)
 
     assert verify_feedback_token(1, 2, "correct", now + 60, active_token)
     assert not verify_feedback_token(1, 2, "correct", now - 60, expired_token)
+
+
+def test_database_timestamps_use_ist() -> None:
+    timestamp = datetime.fromisoformat(ist_now())
+
+    assert timestamp.utcoffset() == timedelta(hours=5, minutes=30)

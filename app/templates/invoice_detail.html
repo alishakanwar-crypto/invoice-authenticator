@@ -6,7 +6,7 @@
   <div>
     <span class="eyebrow">Authenticity report</span>
     <h1>{{ invoice.test_number }}</h1>
-    <p>{{ invoice.original_filename }} · {{ invoice.created_at[:16]|replace("T", " ") }} UTC</p>
+    <p>{{ invoice.original_filename }} · {{ invoice.created_at|format_ist }}</p>
   </div>
   <div class="risk-orb {{ invoice.verdict }}">
     <strong>{{ invoice.risk_score }}</strong><span>risk / 100</span>
@@ -43,7 +43,7 @@
       <input type="email" name="recipient" value="{{ invoice.report_email or '' }}" placeholder="Recipient email" required>
       <button class="primary" type="submit">Send report</button>
     </form>
-    {% if invoice.report_sent_at %}<p class="sent">Last sent {{ invoice.report_sent_at[:16]|replace("T", " ") }} UTC</p>{% endif %}
+    {% if invoice.report_sent_at %}<p class="sent">Last sent {{ invoice.report_sent_at|format_ist }}</p>{% endif %}
   </article>
 </section>
 

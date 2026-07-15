@@ -1,8 +1,10 @@
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
+IST = ZoneInfo("Asia/Kolkata")
 
 
 def _as_bool(value: str, default: bool) -> bool:

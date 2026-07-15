@@ -80,7 +80,7 @@
           <td>{{ invoice.sender_name or invoice.sender_email or "Not recorded" }}</td>
           <td><strong>{{ invoice.risk_score }}</strong>/100</td>
           <td><span class="status {{ invoice.verdict }}">{{ invoice.verdict|replace("_", " ") }}</span></td>
-          <td>{{ invoice.created_at[:10] }}</td>
+          <td>{{ invoice.created_at|format_ist }}</td>
         </tr>
         {% else %}
         <tr><td colspan="6" class="empty">No invoices have been uploaded yet.</td></tr>

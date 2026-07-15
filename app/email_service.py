@@ -1,17 +1,17 @@
 import hmac
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from email.message import EmailMessage
 from hashlib import sha256
 from html import escape
 
 import aiosmtplib
 
-from app.config import settings
+from app.config import IST, settings
 
 
 def feedback_expiry() -> int:
-    expiry = datetime.now(timezone.utc) + timedelta(days=settings.feedback_link_days)
+    expiry = datetime.now(IST) + timedelta(days=settings.feedback_link_days)
     return int(expiry.timestamp())
 
 
@@ -36,7 +36,7 @@ def verify_feedback_token(
     expires_at: int,
     token: str,
 ) -> bool:
-    if expires_at < int(datetime.now(timezone.utc).timestamp()):
+    if expires_at < int(datetime.now(IST).timestamp()):
         return False
     return hmac.compare_digest(
         feedback_token(invoice_id, test_result_id, response, expires_at),

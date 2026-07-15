@@ -2,15 +2,15 @@ import json
 import sqlite3
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import cast
 
-from app.config import settings
+from app.config import IST, settings
 
 
-def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+def ist_now() -> str:
+    return datetime.now(IST).isoformat()
 
 
 @contextmanager
@@ -111,7 +111,7 @@ def create_invoice(
     vendor_name: str,
     notes: str,
 ) -> int:
-    created_at = utc_now()
+    created_at = ist_now()
     with connection() as database:
         cursor = database.execute(
             """
@@ -138,7 +138,7 @@ def create_invoice(
         if cursor.lastrowid is None:
             raise RuntimeError("Invoice record was not created")
         invoice_id = cursor.lastrowid
-        date_part = datetime.now(timezone.utc).strftime("%Y%m%d")
+        date_part = datetime.now(IST).strftime("%Y%m%d")
         test_number = f"IV-{date_part}-{invoice_id:06d}"
         database.execute(
             "UPDATE invoices SET test_number = ? WHERE id = ?",
@@ -176,7 +176,7 @@ def update_invoice_analysis(
                 verdict,
                 risk_score,
                 summary,
-                utc_now(),
+                ist_now(),
                 invoice_id,
             ),
         )
@@ -204,7 +204,7 @@ def save_test_results(invoice_id: int, tests: list[dict[str, object]]) -> None:
                     result["evidence"],
                     result["recommendation"],
                     json.dumps(result.get("metadata", {})),
-                    utc_now(),
+                    ist_now(),
                 ),
             )
 
@@ -325,7 +325,7 @@ def add_feedback(
                 explanation or None,
                 reviewer_name or None,
                 source,
-                utc_now(),
+                ist_now(),
             ),
         )
 
@@ -337,7 +337,7 @@ def consume_feedback_token(token_digest: str) -> bool:
             INSERT OR IGNORE INTO used_feedback_tokens (token_digest, used_at)
             VALUES (?, ?)
             """,
-            (token_digest, utc_now()),
+            (token_digest, ist_now()),
         )
         return cursor.rowcount == 1
 
@@ -354,5 +354,5 @@ def mark_report_sent(invoice_id: int) -> None:
     with connection() as database:
         database.execute(
             "UPDATE invoices SET report_sent_at = ? WHERE id = ?",
-            (utc_now(), invoice_id),
+            (ist_now(), invoice_id),
         )

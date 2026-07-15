@@ -4,7 +4,7 @@ import re
 from collections import defaultdict, deque
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from functools import partial
 from hashlib import sha256
 from pathlib import Path
@@ -16,7 +16,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app.config import ROOT_DIR, settings
+from app.config import IST, ROOT_DIR, settings
 from app.database import (
     add_feedback,
     consume_feedback_token,
@@ -71,7 +71,7 @@ def _valid_session(token: str) -> bool:
         expires_at = int(expires_text)
     except (TypeError, ValueError):
         return False
-    if expires_at < int(datetime.now(timezone.utc).timestamp()):
+    if expires_at < int(datetime.now(IST).timestamp()):
         return False
     expected = _signature(f"{settings.admin_username}:{expires_at}")
     return hmac.compare_digest(expected, signature)
@@ -88,11 +88,11 @@ def _verify_csrf(request: Request, token: str) -> None:
 
 
 def _login_csrf_token() -> str:
-    return _signature(f"login:{datetime.now(timezone.utc).date().isoformat()}")
+    return _signature(f"login:{datetime.now(IST).date().isoformat()}")
 
 
 def _verify_login_csrf(token: str) -> None:
-    today = datetime.now(timezone.utc).date()
+    today = datetime.now(IST).date()
     valid_tokens = {
         _signature(f"login:{day.isoformat()}")
         for day in (today, today - timedelta(days=1))
@@ -126,6 +126,18 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(title="Invoice Integrity", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=ROOT_DIR / "app" / "static"), name="static")
 templates = Jinja2Templates(directory=ROOT_DIR / "app" / "templates")
+
+
+def _format_ist(value: str | None) -> str:
+    if not value:
+        return ""
+    timestamp = datetime.fromisoformat(value)
+    if timestamp.tzinfo is None:
+        timestamp = timestamp.replace(tzinfo=IST)
+    return timestamp.astimezone(IST).strftime("%d-%m-%Y %H:%M IST")
+
+
+templates.env.filters["format_ist"] = _format_ist
 
 
 @app.middleware("http")
@@ -185,7 +197,7 @@ async def login(
     ):
         raise HTTPException(401, "Invalid username or password.")
     expires_at = int(
-        (datetime.now(timezone.utc) + timedelta(hours=settings.session_hours)).timestamp()
+        (datetime.now(IST) + timedelta(hours=settings.session_hours)).timestamp()
     )
     response = RedirectResponse("/", status_code=303)
     response.set_cookie(
