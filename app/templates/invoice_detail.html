@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{{ invoice.test_number }} · Invoice Integrity{% endblock %}
+{% block content %}
+<a class="back" href="/">← Back to dashboard</a>
+<section class="result-header">
+  <div>
+    <span class="eyebrow">Authenticity report</span>
+    <h1>{{ invoice.test_number }}</h1>
+    <p>{{ invoice.original_filename }} · {{ invoice.created_at|format_ist }}</p>
+  </div>
+  <div class="risk-orb {{ invoice.verdict }}">
+    <strong>{{ invoice.risk_score }}</strong><span>risk / 100</span>
+  </div>
+</section>
+
+<section class="verdict-banner {{ invoice.verdict }}">
+  <div><span>Automated verdict</span><strong>{{ invoice.verdict|replace("_", " ") }}</strong></div>
+  <p>{{ invoice.summary }}</p>
+</section>
+
+<section class="detail-grid">
+  <article class="card">
+    <span class="eyebrow">Extracted data</span>
+    <h2>Invoice summary</h2>
+    <dl class="facts">
+      <div><dt>Vendor</dt><dd>{{ invoice.vendor_name or "Not provided" }}</dd></div>
+      <div><dt>Invoice number</dt><dd>{{ invoice.invoice_number or "Not extracted" }}</dd></div>
+      <div><dt>Invoice date</dt><dd>{{ invoice.invoice_date or "Not extracted" }}</dd></div>
+      <div><dt>Total</dt><dd>{{ invoice.amount or "Not extracted" }}</dd></div>
+      <div><dt>GSTIN</dt><dd>{{ invoice.gstin or "Not extracted" }}</dd></div>
+      <div><dt>Sender</dt><dd>{{ invoice.sender_name or invoice.sender_email or "Not recorded" }}</dd></div>
+    </dl>
+  </article>
+  <article class="card">
+    <span class="eyebrow">Report delivery</span>
+    <h2>Email report</h2>
+    <p class="muted">Preview the polished report or send it when SMTP is configured.</p>
+    <div class="button-row">
+      <a class="secondary button" target="_blank" href="/invoices/{{ invoice.id }}/email-preview">Preview email</a>
+    </div>
+    <form class="inline-form" action="/invoices/{{ invoice.id }}/send-report" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="email" name="recipient" value="{{ invoice.report_email or '' }}" placeholder="Recipient email" required>
+      <button class="primary" type="submit">Send report</button>
+    </form>
+    {% if invoice.report_sent_at %}<p class="sent">Last sent {{ invoice.report_sent_at|format_ist }}</p>{% endif %}
+  </article>
+</section>
+
+<section class="card test-section">
+  <div class="section-heading">
+    <div><span class="eyebrow">Evidence ledger</span><h2>Tests conducted</h2></div>
+    <span class="privacy-pill">{{ tests|length }} tests</span>
+  </div>
+  <div class="tests">
+    {% for test in tests %}
+    <article id="test-{{ test.id }}" class="test-row">
+      <div class="test-status {{ test.status }}">{{ test.status|replace("_", " ") }}</div>
+      <div class="test-content">
+        <div class="test-title"><strong>{{ test.test_name }}</strong><span>{{ test.category }} · {{ test.confidence }}% confidence</span></div>
+        <p>{{ test.evidence }}</p>
+        <small><strong>Next step:</strong> {{ test.recommendation }}</small>
+      </div>
+      <form class="feedback-form" action="/invoices/{{ invoice.id }}/feedback" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="test_result_id" value="{{ test.id }}">
+        <label>Was this test right?
+          <select name="response" required>
+            <option value="">Choose feedback</option>
+            <option value="correct">Automated test was correct</option>
+            <option value="should_pass">Should have passed</option>
+            <option value="should_fail">Should have failed</option>
+            <option value="not_enough_evidence">Not enough evidence</option>
+          </select>
+        </label>
+        <input name="explanation" placeholder="Optional explanation">
+        <button type="submit">Save</button>
+        {% if test.latest_feedback %}<span class="saved">Saved: {{ test.latest_feedback|replace("_", " ") }}</span>{% endif %}
+      </form>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section id="manual-review" class="card manual-review">
+  <span class="eyebrow">Human ground truth</span>
+  <h2>Record the real outcome</h2>
+  <p class="muted">Your confirmed decision is kept separately from the automated verdict and can be used for reviewed model calibration.</p>
+  <form action="/invoices/{{ invoice.id }}/manual-review" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <select name="verdict">
+      <option value="">Not decided</option>
+      <option value="real" {% if invoice.manual_verdict == "real" %}selected{% endif %}>Confirmed real</option>
+      <option value="tampered" {% if invoice.manual_verdict == "tampered" %}selected{% endif %}>Confirmed tampered</option>
+      <option value="duplicate" {% if invoice.manual_verdict == "duplicate" %}selected{% endif %}>Confirmed duplicate</option>
+      <option value="inconclusive" {% if invoice.manual_verdict == "inconclusive" %}selected{% endif %}>Inconclusive</option>
+    </select>
+    <textarea name="notes" rows="3" placeholder="How was this confirmed?">{{ invoice.manual_notes or "" }}</textarea>
+    <button class="primary" type="submit">Save human verdict</button>
+  </form>
+</section>
+{% endblock %}

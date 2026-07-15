@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Feedback saved{% endblock %}
+{% block content %}
+<section class="card thanks">
+  <span class="eyebrow">Feedback recorded</span>
+  <h1>Thank you.</h1>
+  <p>You marked this test as <strong>{{ response }}</strong> for {{ invoice.test_number }}.</p>
+  <a class="primary button" href="/invoices/{{ invoice.id }}">Review full report</a>
+</section>
+{% endblock %}
