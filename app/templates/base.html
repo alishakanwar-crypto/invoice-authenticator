@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Invoice Integrity{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">
+      <span class="brand-mark">II</span>
+      <span><strong>Invoice Integrity</strong><small>Evidence-backed verification</small></span>
+    </a>
+    <span class="topbar-note">Accuracy before automation</span>
+  </header>
+  <main class="page">{% block content %}{% endblock %}</main>
+  <footer>
+    Automated results support human review. Verify high-risk invoices with authoritative records.
+  </footer>
+</body>
+</html>

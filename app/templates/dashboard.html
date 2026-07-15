@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Invoice Integrity Dashboard{% endblock %}
+{% block content %}
+<section class="hero">
+  <div>
+    <span class="eyebrow">Invoice authenticity command centre</span>
+    <h1>Detect tampering, duplicates and verification gaps.</h1>
+    <p>Every upload receives a traceable test number, an evidence-based risk score and editable test-by-test feedback.</p>
+  </div>
+  <div class="hero-shield">Integrity<br><strong>first</strong></div>
+</section>
+
+<section class="stats">
+  <article><span>Total reviewed</span><strong>{{ counts.total }}</strong></article>
+  <article><span>Likely genuine</span><strong>{{ counts.likely_genuine }}</strong></article>
+  <article><span>Needs review</span><strong>{{ counts.needs_review }}</strong></article>
+  <article><span>Likely tampered</span><strong>{{ counts.likely_tampered }}</strong></article>
+</section>
+
+<section class="grid">
+  <article class="card upload-card">
+    <div class="section-heading">
+      <div><span class="eyebrow">New analysis</span><h2>Upload an invoice</h2></div>
+      <span class="privacy-pill">PDF · JPG · PNG</span>
+    </div>
+    <form action="/invoices" method="post" enctype="multipart/form-data">
+      <label class="dropzone">
+        <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png" required>
+        <span class="upload-icon">↑</span>
+        <strong>Select an invoice</strong>
+        <small>Original digital files provide the strongest evidence.</small>
+      </label>
+      <div class="form-grid">
+        <label>Vendor name<input name="vendor_name" placeholder="Optional"></label>
+        <label>Who sent it?<input name="sender_name" placeholder="Name or organisation"></label>
+        <label>Sender email<input type="email" name="sender_email" placeholder="Optional"></label>
+        <label>Email report to<input type="email" name="report_email" placeholder="Optional"></label>
+      </div>
+      <label>Notes<textarea name="notes" rows="3" placeholder="PO, payment request context, concerns…"></textarea></label>
+      <button class="primary" type="submit">Run authenticity tests</button>
+    </form>
+  </article>
+
+  <aside class="card method-card">
+    <span class="eyebrow">What is checked</span>
+    <h2>Layered evidence</h2>
+    <ol class="method-list">
+      <li><span>01</span><div><strong>File integrity</strong><small>Hashes, PDF structure, revisions, metadata</small></div></li>
+      <li><span>02</span><div><strong>Visual forensics</strong><small>Compression and appearance fingerprints</small></div></li>
+      <li><span>03</span><div><strong>Invoice logic</strong><small>Identifiers, GSTIN, QR and content extraction</small></div></li>
+      <li><span>04</span><div><strong>History matching</strong><small>Exact, near and invoice-number duplicates</small></div></li>
+    </ol>
+    <p class="caution">No visual AI can prove authenticity alone. Strong decisions require original-source, GST/IRP and business-record checks.</p>
+  </aside>
+</section>
+
+<section class="card history">
+  <div class="section-heading">
+    <div><span class="eyebrow">Audit trail</span><h2>Upload history</h2></div>
+    <form class="filters" method="get">
+      <input name="search" value="{{ search }}" placeholder="Search test, file, vendor…">
+      <select name="verdict">
+        <option value="">All statuses</option>
+        <option value="likely_genuine" {% if verdict == "likely_genuine" %}selected{% endif %}>Likely genuine</option>
+        <option value="needs_review" {% if verdict == "needs_review" %}selected{% endif %}>Needs review</option>
+        <option value="likely_tampered" {% if verdict == "likely_tampered" %}selected{% endif %}>Likely tampered</option>
+      </select>
+      <button type="submit">Filter</button>
+    </form>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Test</th><th>Invoice</th><th>Sender</th><th>Risk</th><th>Status</th><th>Uploaded</th></tr></thead>
+      <tbody>
+        {% for invoice in invoices %}
+        <tr>
+          <td><a href="/invoices/{{ invoice.id }}"><strong>{{ invoice.test_number }}</strong></a></td>
+          <td>{{ invoice.vendor_name or invoice.original_filename }}<small>{{ invoice.invoice_number or "Number not extracted" }}</small></td>
+          <td>{{ invoice.sender_name or invoice.sender_email or "Not recorded" }}</td>
+          <td><strong>{{ invoice.risk_score }}</strong>/100</td>
+          <td><span class="status {{ invoice.verdict }}">{{ invoice.verdict|replace("_", " ") }}</span></td>
+          <td>{{ invoice.created_at[:10] }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="empty">No invoices have been uploaded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
