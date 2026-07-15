@@ -1,5 +1,6 @@
 import hmac
 import sqlite3
+from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 from hashlib import sha256
 from html import escape
@@ -9,8 +10,18 @@ import aiosmtplib
 from app.config import settings
 
 
-def feedback_token(invoice_id: int, test_result_id: int | None, response: str) -> str:
-    payload = f"{invoice_id}:{test_result_id or 0}:{response}"
+def feedback_expiry() -> int:
+    expiry = datetime.now(timezone.utc) + timedelta(days=settings.feedback_link_days)
+    return int(expiry.timestamp())
+
+
+def feedback_token(
+    invoice_id: int,
+    test_result_id: int | None,
+    response: str,
+    expires_at: int,
+) -> str:
+    payload = f"{invoice_id}:{test_result_id or 0}:{response}:{expires_at}"
     return hmac.new(
         settings.app_secret.encode(),
         payload.encode(),
@@ -22,24 +33,55 @@ def verify_feedback_token(
     invoice_id: int,
     test_result_id: int | None,
     response: str,
+    expires_at: int,
     token: str,
 ) -> bool:
+    if expires_at < int(datetime.now(timezone.utc).timestamp()):
+        return False
     return hmac.compare_digest(
-        feedback_token(invoice_id, test_result_id, response),
+        feedback_token(invoice_id, test_result_id, response, expires_at),
         token,
     )
 
 
-def _feedback_url(invoice_id: int, test_result_id: int | None, response: str) -> str:
-    token = feedback_token(invoice_id, test_result_id, response)
+def _feedback_url(
+    invoice_id: int,
+    test_result_id: int | None,
+    response: str,
+    expires_at: int,
+) -> str:
+    token = feedback_token(invoice_id, test_result_id, response, expires_at)
     return (
         f"{settings.public_base_url}/feedback/email?"
         f"invoice_id={invoice_id}&test_result_id={test_result_id or 0}"
-        f"&response={response}&token={token}"
+        f"&response={response}&expires_at={expires_at}&token={token}"
     )
 
 
+def _report_row(invoice_id: int, test: sqlite3.Row, expires_at: int) -> str:
+    correct_url = _feedback_url(invoice_id, int(test["id"]), "correct", expires_at)
+    pass_url = _feedback_url(invoice_id, int(test["id"]), "should_pass", expires_at)
+    fail_url = _feedback_url(invoice_id, int(test["id"]), "should_fail", expires_at)
+    return f"""
+        <tr>
+          <td style="padding:12px;border-bottom:1px solid #e8efe9">
+            <strong>{escape(str(test["test_name"]))}</strong><br>
+            <span style="color:#68756b;font-size:12px">{escape(str(test["evidence"]))}</span>
+          </td>
+          <td style="padding:12px;border-bottom:1px solid #e8efe9;text-transform:capitalize">
+            {escape(str(test["status"]).replace("_", " "))}
+          </td>
+          <td style="padding:12px;border-bottom:1px solid #e8efe9;white-space:nowrap">
+            <a href="{correct_url}" style="color:#087f5b">Correct</a> ·
+            <a href="{pass_url}" style="color:#087f5b">Should pass</a> ·
+            <a href="{fail_url}" style="color:#087f5b">Should fail</a>
+          </td>
+        </tr>
+    """
+
+
 def render_report_email(invoice: sqlite3.Row, tests: list[sqlite3.Row]) -> str:
+    expires_at = feedback_expiry()
     verdict_labels = {
         "likely_genuine": "Likely genuine",
         "needs_review": "Needs review",
@@ -53,28 +95,7 @@ def render_report_email(invoice: sqlite3.Row, tests: list[sqlite3.Row]) -> str:
         "verified": "#087f5b",
     }
     verdict = str(invoice["verdict"])
-    rows = "".join(
-        f"""
-        <tr>
-          <td style="padding:12px;border-bottom:1px solid #e8efe9">
-            <strong>{escape(str(test["test_name"]))}</strong><br>
-            <span style="color:#68756b;font-size:12px">{escape(str(test["evidence"]))}</span>
-          </td>
-          <td style="padding:12px;border-bottom:1px solid #e8efe9;text-transform:capitalize">
-            {escape(str(test["status"]).replace("_", " "))}
-          </td>
-          <td style="padding:12px;border-bottom:1px solid #e8efe9;white-space:nowrap">
-            <a href="{_feedback_url(int(invoice["id"]), int(test["id"]), "correct")}"
-               style="color:#087f5b">Correct</a> ·
-            <a href="{_feedback_url(int(invoice["id"]), int(test["id"]), "should_pass")}"
-               style="color:#087f5b">Should pass</a> ·
-            <a href="{_feedback_url(int(invoice["id"]), int(test["id"]), "should_fail")}"
-               style="color:#087f5b">Should fail</a>
-          </td>
-        </tr>
-        """
-        for test in tests
-    )
+    rows = "".join(_report_row(int(invoice["id"]), test, expires_at) for test in tests)
     return f"""
     <!doctype html>
     <html>

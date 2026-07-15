@@ -24,6 +24,7 @@
       <span class="privacy-pill">PDF · JPG · PNG</span>
     </div>
     <form action="/invoices" method="post" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <label class="dropzone">
         <input type="file" name="file" accept=".pdf,.jpg,.jpeg,.png" required>
         <span class="upload-icon">↑</span>

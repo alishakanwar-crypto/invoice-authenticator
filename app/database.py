@@ -86,6 +86,11 @@ def initialize_database() -> None:
                 created_at TEXT NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS used_feedback_tokens (
+                token_digest TEXT PRIMARY KEY,
+                used_at TEXT NOT NULL
+            );
+
             CREATE INDEX IF NOT EXISTS idx_invoices_sha256 ON invoices(sha256);
             CREATE INDEX IF NOT EXISTS idx_invoices_number ON invoices(invoice_number);
             CREATE INDEX IF NOT EXISTS idx_invoices_created_at ON invoices(created_at DESC);
@@ -323,6 +328,18 @@ def add_feedback(
                 utc_now(),
             ),
         )
+
+
+def consume_feedback_token(token_digest: str) -> bool:
+    with connection() as database:
+        cursor = database.execute(
+            """
+            INSERT OR IGNORE INTO used_feedback_tokens (token_digest, used_at)
+            VALUES (?, ?)
+            """,
+            (token_digest, utc_now()),
+        )
+        return cursor.rowcount == 1
 
 
 def update_manual_review(invoice_id: int, verdict: str, notes: str) -> None:

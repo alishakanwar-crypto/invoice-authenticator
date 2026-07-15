@@ -39,6 +39,7 @@
       <a class="secondary button" target="_blank" href="/invoices/{{ invoice.id }}/email-preview">Preview email</a>
     </div>
     <form class="inline-form" action="/invoices/{{ invoice.id }}/send-report" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="email" name="recipient" value="{{ invoice.report_email or '' }}" placeholder="Recipient email" required>
       <button class="primary" type="submit">Send report</button>
     </form>
@@ -61,6 +62,7 @@
         <small><strong>Next step:</strong> {{ test.recommendation }}</small>
       </div>
       <form class="feedback-form" action="/invoices/{{ invoice.id }}/feedback" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="hidden" name="test_result_id" value="{{ test.id }}">
         <label>Was this test right?
           <select name="response" required>
@@ -85,6 +87,7 @@
   <h2>Record the real outcome</h2>
   <p class="muted">Your confirmed decision is kept separately from the automated verdict and can be used for reviewed model calibration.</p>
   <form action="/invoices/{{ invoice.id }}/manual-review" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <select name="verdict">
       <option value="">Not decided</option>
       <option value="real" {% if invoice.manual_verdict == "real" %}selected{% endif %}>Confirmed real</option>

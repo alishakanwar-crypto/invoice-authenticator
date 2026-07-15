@@ -12,7 +12,15 @@
       <span class="brand-mark">II</span>
       <span><strong>Invoice Integrity</strong><small>Evidence-backed verification</small></span>
     </a>
-    <span class="topbar-note">Accuracy before automation</span>
+    <div class="topbar-note">
+      <span>Accuracy before automation</span>
+      {% if csrf_token %}
+      <form action="/logout" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit">Sign out</button>
+      </form>
+      {% endif %}
+    </div>
   </header>
   <main class="page">{% block content %}{% endblock %}</main>
   <footer>

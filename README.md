@@ -17,6 +17,9 @@ The system does **not** claim that appearance alone proves an invoice is real. I
 
 ```bash
 uv sync
+cp .env.example .env
+# Replace APP_SECRET and ADMIN_PASSWORD, then:
+set -a && source .env && set +a
 uv run fastapi dev
 ```
 
@@ -24,11 +27,14 @@ Open `http://localhost:8000`.
 
 ## Configuration
 
-Copy `.env.example` to `.env` and export its values before starting. SMTP is optional; without it,
-the dashboard still provides an email preview.
+Copy `.env.example` to `.env`, replace the required secrets and export its values before starting.
+The application refuses to start without an admin password or with the development-only signing
+secret. SMTP is optional; without it, the dashboard still provides an email preview.
 
-Production deployments must set a strong `APP_SECRET`, use authenticated access, encrypted object
-storage, malware scanning, PostgreSQL, regular backups and independently validated GST/IRP/vendor
+Dashboard routes require a signed admin session, state-changing forms require CSRF tokens, feedback
+links expire and are single-use, and CPU-heavy analysis/email routes have baseline rate limits.
+Production deployments should additionally use encrypted object storage, malware scanning,
+PostgreSQL, shared Redis rate limiting, regular backups and independently validated GST/IRP/vendor
 integrations.
 
 ## Current evidence levels

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Confirm feedback · Invoice Integrity{% endblock %}
+{% block content %}
+<section class="card auth-card">
+  <span class="eyebrow">Email feedback</span>
+  <h1>Confirm “{{ response|replace("_", " ") }}”</h1>
+  <p class="muted">For {{ invoice.test_number }}. Confirmation prevents email security scanners from recording false feedback.</p>
+  <form action="/feedback/email" method="post">
+    <input type="hidden" name="invoice_id" value="{{ invoice.id }}">
+    <input type="hidden" name="test_result_id" value="{{ test_result_id }}">
+    <input type="hidden" name="response" value="{{ response }}">
+    <input type="hidden" name="expires_at" value="{{ expires_at }}">
+    <input type="hidden" name="token" value="{{ token }}">
+    <button class="primary" type="submit">Confirm feedback</button>
+  </form>
+</section>
+{% endblock %}

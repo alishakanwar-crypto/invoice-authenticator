@@ -1,3 +1,6 @@
+from datetime import datetime, timezone
+
+from app.email_service import feedback_token, verify_feedback_token
 from app.forensics import _calculate_verdict, _gstin_checksum_valid, _hamming_distance
 
 
@@ -46,3 +49,12 @@ def test_changed_fields_in_near_duplicate_is_strong_tamper_signal() -> None:
         ]
     )
     assert verdict == "likely_tampered"
+
+
+def test_feedback_token_expires() -> None:
+    now = int(datetime.now(timezone.utc).timestamp())
+    active_token = feedback_token(1, 2, "correct", now + 60)
+    expired_token = feedback_token(1, 2, "correct", now - 60)
+
+    assert verify_feedback_token(1, 2, "correct", now + 60, active_token)
+    assert not verify_feedback_token(1, 2, "correct", now - 60, expired_token)

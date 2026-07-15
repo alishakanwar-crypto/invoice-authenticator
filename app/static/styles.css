@@ -20,7 +20,9 @@ a { color: var(--green-700); text-decoration: none; }
 .brand span:last-child { display: grid; }
 .brand small { color: var(--muted); font-size: 11px; }
 .brand-mark { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: #fff; background: var(--green-800); font-weight: 800; }
-.topbar-note { color: var(--muted); font-size: 13px; }
+.topbar-note { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 12px; }
+.topbar-note form { margin: 0; }
+.topbar-note button { color: var(--green-800); background: var(--green-100); padding: 7px 10px; font-size: 12px; }
 .page { width: min(1240px, calc(100% - 32px)); margin: 0 auto; padding: 38px 0 70px; }
 .hero { color: #fff; background: linear-gradient(125deg, var(--green-950), var(--green-800)); border-radius: 22px; padding: 42px 48px; display: flex; justify-content: space-between; align-items: center; overflow: hidden; position: relative; }
 .hero h1 { font-size: clamp(34px, 5vw, 58px); line-height: 1.02; max-width: 760px; margin: 10px 0 16px; letter-spacing: -2px; }
@@ -101,6 +103,9 @@ td small { color: var(--muted); display: block; margin-top: 2px; }
 .manual-review { margin-top: 18px; }
 .manual-review form { display: grid; grid-template-columns: 220px 1fr auto; gap: 10px; align-items: start; }
 .thanks { max-width: 620px; margin: 70px auto; text-align: center; padding: 55px; }
+.auth-card { max-width: 520px; margin: 70px auto; }
+.auth-card h1 { margin-bottom: 8px; }
+.auth-card form { display: grid; gap: 15px; margin-top: 24px; }
 footer { color: var(--muted); text-align: center; font-size: 11px; padding: 0 20px 30px; }
 @media (max-width: 850px) {
   .topbar-note, .hero-shield { display: none; }
